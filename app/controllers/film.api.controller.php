@@ -1,6 +1,7 @@
 <?php
 
 require_once 'app/models/film.model.php';
+require_once 'app/models/gender.model.php';
 /*
 
 Implementar ordenamiento 
@@ -27,15 +28,17 @@ order: asc o desc
 
 class FilmApiController {
     private $model;
+    private $genderModel;
 
     function __construct() {
         $this->model = new FilmsModel();
+        $this->genderModel = new GenderModel();
         //sin vista uso el $res->json del router
     }
 
      function getFilms($req, $res) {
-        $orderBy = $req->query->orderBy ?? 'titulo';
-        $sort = strtoupper($req->query->sort ?? 'ASC');
+        $orderBy = $req->query->orderBy ?? 'titulo'; // campo de orden
+        $sort = strtoupper($req->query->sort ?? 'ASC'); //ASC o DESC
         $limit = isset($req->query->limit) ? (int)$req->query->limit : null;
         $page = isset($req->query->page) ? (int)$req->query->page : null;
 
@@ -72,8 +75,8 @@ class FilmApiController {
         }
 
         //Valido todos los campos requeridos en el body 
-        if(empty($req->body->titulo) || empty($req->body->anio) || empty($req->body->rating) || empty($req->body->id_genero)) {
-            return $res->json(["error" => "Faltan datos obligatorios (titulo, anio, rating, id_genero)"], 400);
+        if(empty($req->body->titulo) || empty($req->body->anio) || empty($req->body->rating) || empty($req->body->id_genero) || empty($req->body->genero)) {
+            return $res->json(["error" => "Faltan datos obligatorios (titulo, anio, rating,genero o id_genero)"], 400);
         }
 
         //Obtengo los datos
@@ -87,11 +90,43 @@ class FilmApiController {
             return $res->json(["error" => "Año inválido"], 400);
         }
 
+        // determino el id del genero
+        if (!empty($req->body->genero)) {
+            $nombreGenero = trim($req->body->genero);
+            $gender = $this->genderModel->getByName($nombreGenero);
+            if ($gender)
+                $id_genero = $gender->id_genero;
+        } elseif (!empty($req->body->id_genero)) {
+            $id_genero = (int)$req->body->id_genero;
+            $gender = $this->genderModel->getGenderById($id_genero);
+        }
+
+        // verifico que exista el genero
+        $genero = $this->genderModel->getGenderById($id_genero);
+        if (!$genero) {
+            return $res->json(["error" => "El genero ingresado no existe."], 400);
+        }
+
+        // verifico que no exista otra película con mismo título y año
+        $duplicado = $this->model->getFilmByTitleAndYear($titulo, $anio);
+        if($duplicado && $duplicado->id_pelicula != $idFilm) {
+            return $res->json(["error" => "Ya existe otra película con ese título y año."], 400);
+        }
+
         //Acutalizo el modelo
         $this->model->updateFilm($idFilm,$titulo,$anio,$rating,$id_genero);
 
         $film = $this->model->getMovie($idFilm);
-        return $res->json($film, 201);  
+
+        //devolver solo campos "editables"
+        $datos = [
+            "titulo" => $film->titulo,
+            "anio" => $film->anio,
+            "rating" => $film->rating,
+            "genero" => $film->genero
+        ];
+
+        return $res->json($datos, 200);  
     }
 
     function deleteFilm($req, $res) {

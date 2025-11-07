@@ -53,4 +53,12 @@ class GenderModel {
         $query->execute([$id]);
         return $query->fetchAll(PDO::FETCH_OBJ);
     }
+
+    // funcion para que devuelva el id del genero dado su nombre y me permite cambiar de forma directa el nombe del genero
+    function getIdByName($nombre) {
+        $query = $this->db->prepare('SELECT id_genero FROM genero WHERE nombre = ?');
+        $query->execute([$nombre]);
+        $res = $query->fetch(PDO::FETCH_OBJ);
+        return $res ? $res->id_genero : null;
+    }
 }

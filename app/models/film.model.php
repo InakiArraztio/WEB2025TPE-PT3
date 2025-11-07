@@ -10,7 +10,8 @@ class FilmsModel {
     private function getConnection() {
         return new PDO('mysql:host=localhost;dbname=db_blockbuster;charset=utf8', 'root', ''); 
     }
-
+    
+    //3° ordenado por titulo o por año
     public function getMovies($orderBy = 'titulo', $sort = 'ASC', $limit = null, $page = null) {
         $allowedFields = ['id_pelicula', 'titulo', 'anio', 'rating', 'id_genero'];
         $allowedOrder = ['ASC', 'DESC'];
@@ -31,6 +32,18 @@ class FilmsModel {
         return $query->fetchAll(PDO::FETCH_OBJ);
     }
 
+    //Listado ordenado: ordenado alfabeticamente 3° Entrega
+    function getMoviesAlf($oderBy = 'titutlo', $order = 'ASC') {
+        $fields = ['titulo', 'anio', 'rating', 'id_genero'];
+        $orderAlf = ['ASC', 'DESC'];
+        
+        if(!in_array($oderBy,$fields)) $fields = 'titulo';
+        if(!in_array($order,$orderAlf)) $order = 'ASC';
+
+        $query = $this->db->prepare("SELECT * FROM pelicula ORDER BY $orderAlf $order");
+        $query->execute();
+        return $query->fetch(PDO::FETCH_OBJ);
+    }
 
     function getMovie($id) {
         $query = $this->db->prepare('
@@ -47,6 +60,7 @@ class FilmsModel {
         $query->execute([$titulo,$anio,$rating,$id_genero]);
         return $this->db->lastInsertId();
     }
+
     //Funcion para que verificar no exista una pelicula por nombre y año
     function getFilmByTitleAndYear($titulo, $year) {
         $query = $this->db->prepare('SELECT * FROM pelicula WHERE titulo = ? AND anio = ?');
@@ -72,19 +86,4 @@ class FilmsModel {
         $query->execute([$id]);
         return $query->fetchAll(PDO::FETCH_OBJ);
     }
-
-
-    //Listado ordenado: ordenado alfabeticamente 3° Entrega
-    function getMoviesAlf($oderBy = 'titutlo', $order = 'ASC') {
-        $fields = ['titulo', 'anio', 'rating', 'id_genero'];
-        $orderAlf = ['ASC', 'DESC'];
-        
-        if(!in_array($oderBy,$fields)) $fields = 'titulo';
-        if(!in_array($order,$orderAlf)) $order = 'ASC';
-
-        $query = $this->db->prepare("SELECT * FROM pelicula ORDER BY $orderAlf $order");
-        $query->execute();
-        return $query->fetch(PDO::FETCH_OBJ);
-    }
-
 }
