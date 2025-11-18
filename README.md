@@ -13,10 +13,10 @@ Diseñamos los endpoints partiendo del recurso para mantener una interfaz unific
     - Metodo.
 
 'movies',     'GET',    'FilmApiController',    'getFilms' 
-'movie/:id',  'GET',    'FilmApiController',    'getFilmById'
-'movie',      'POST',   'FilmApiController',    'addFilm' (TODO)
-'movie/:id',  'PUT',    'FilmApiController',    'updateFilm'
-'movie/:id',  'DELETE', 'FilmApiController',    'deleteFilm'
+'movies/:id',  'GET',    'FilmApiController',    'getFilmById'
+'movies',      'POST',   'FilmApiController',    'addFilm' 
+'movies/:id',  'PUT',    'FilmApiController',    'updateFilm'
+'movies/:id',  'DELETE', 'FilmApiController',    'deleteFilm'
 
 2. Debe tener al menos un servicio que liste (GET) una coleccion entera de entidades.
 
@@ -83,11 +83,36 @@ PUT ej: http://localhost/tpe3-web2-2025/api/movies/1
     "genero": "Acción"
 }
 
+Inserción/Creación de una nueva pelicula (POST).
+
+Para la creación de un item, deben estar presentes los atributos:
+    - titulo
+    - anio
+    - rating
+    - id_genero
+
+POST  http://localhost/tpe3-web2-2025/api/movies
+
+Si fue exitosa recibira algo como:
+201 Created
+
+{
+    "id": "13",
+    "mensaje": "Película creada exitosamente"
+}
+
+Si falta algun dato:
+400 Bad Request
+
+{
+    "error": "Faltan datos obligatorios (titulo, anio, rating, id_genero)"
+}
+
 6. La API Rest debe manejar de manera adecuada al menos los siguientes códigos de error (200, 201, 400 y 404)
 
 200 OK: La solicitud se ha completado con éxito y se devuelve una lista de elementos o un elemento individual.
 201 Created: Se ha creado o modificado un elemento correctamente.
 400 Bad Request: La solicitud contiene datos inválidos o incompletos.
 404 Not Found: No se ha encontrado la lista o el elemento solicitado.
-500 Internal Server Error: Ha ocurrido un error interno en la inserción o modificación de un item. (TODO)
+500 Internal Server Error: Ha ocurrido un error interno en la inserción o modificación de un item.
 

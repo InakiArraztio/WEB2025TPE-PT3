@@ -2,29 +2,6 @@
 
 require_once 'app/models/film.model.php';
 require_once 'app/models/gender.model.php';
-/*
-
-Implementar ordenamiento 
-El endpoint :
-GET /api/movies?sort=titulo&order=desc
-
-sort: campo por le que ordenar (id_pelicula)
-order: asc o desc
-
-    function getFilms($sort = 'id_pelicula', $order = 'ASC') {
-        $fields = ['id_pelicula', 'titulo', 'anio', 'rating'];
-        $orders = ['ASC', 'DESC'];
-
-        if(!in_array($sort,$fields)) $sort = 'id_pelicula';
-        if(!in_array(strtoupper($order), $orders)) $order = 'ASC';
-
-        $query = $this->db->prepare("SELECT * FROM pelicula ORBDER BY $sort $order");
-        $query->execute();
-        return $query->fetchAll(PDO::FETCH_OBJ);
-    }
-
-
-*/
 
 class FilmApiController {
     private $model;
@@ -37,10 +14,38 @@ class FilmApiController {
     }
 
      function getFilms($req, $res) {
+        // parametros de consulta (query params)
         $orderBy = $req->query->orderBy ?? 'titulo'; // campo de orden
+        //strtoupper convierto una cadena de texto a mayusculas
         $sort = strtoupper($req->query->sort ?? 'ASC'); //ASC o DESC
         $limit = isset($req->query->limit) ? (int)$req->query->limit : null;
         $page = isset($req->query->page) ? (int)$req->query->page : null;
+
+        // campos permitidos para ordenar
+        $campos = ['id_pelicula', 'titulo', 'anio', 'rating', 'id_genero'];
+        $camposPermitidos = ['ASC', 'DESC'];
+
+        if (!in_array($orderBy, $campos)) {
+            $orderBy = 'titulo';
+        }
+
+        if (!in_array($sort, $camposPermitidos)) {
+            $sort = 'ASC';
+        }
+
+        // Límite y paginación
+        if (isset($req->query->limit) && is_numeric($req->query->limit)) {
+            $limit = (int) $req->query->limit; // el int,hacer que se haga int por si no llega a  ser de ese tipo
+        }
+
+        if (isset($req->query->page) && is_numeric($req->query->page)) {
+            $page = (int) $req->query->page;
+        }
+
+        // Si hay página pero no límite, se usa 5 por defecto
+        if ($limit === null && $page !== null) {
+            $limit = 5;
+        }
 
         $films = $this->model->getMovies($orderBy, $sort, $limit, $page);
 
@@ -139,26 +144,30 @@ class FilmApiController {
 
         $this->model->deleteFilm($idFilm);
 
-        return $res->json("La pelicula con el id=$idFilm se eliminó", 204);
+        return $res->json("La pelicula con el id=$idFilm se eliminó", 200);
 
     }
 
-    /*
-        function updateTask($req,$res) {
-            $id_task = $req->params->id;
-            $task = $this->model->get($id_task);
-
-            if($task) {
-                $titulo = $req->body->titulo;
-                $descripcion = $req->body->descripcion;
-                $finalizada = $req->body->finalizada;
-
-                $tarea = $this->model->updateTask($id_task,$titulo,$descripcion,$finalizada);
-                $res->json("Tarea id=$id_task actualizada con exito", 200);
-            } else {
-                $res->json("Task id=$id_task not found", 404);    
-            }
+    function postFilm($req,$res) {
+        if(!isset($req->body->titulo) || !isset($req->body->anio) || !isset($req->body->rating) || !isset($req->body->id_genero)) {
+            return $res->json(["error" => "Faltan datos obligatorios (titulo, anio, rating, id_genero)"], 400);
         }
-    */
+
+        $titulo= $req->body->titulo;
+        $anio=$req->body->anio;
+        $rating=$req->body->rating;
+        $id_genero=$req->body->id_genero;
+        //como poster no es obligatorio se usa "", para que el campo pueda estar vacio
+        $poster = $req->body->poster ?? ""; 
+
+        // valido que el genero exista
+        $genero = $this->genderModel->getGenderById($id_genero);
+        if (!$genero) {
+            return $res->json(["error" => "El género ingresado no existe"], 400);
+        }
+
+        $id = $this->model->postFilm($titulo, $anio, $rating, $id_genero, $poster);
+        return $res->json(["id" => $id, "mensaje" => "Película creada exitosamente"], 201);
+    }
 
 }

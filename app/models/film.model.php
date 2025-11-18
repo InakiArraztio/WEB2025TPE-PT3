@@ -11,9 +11,9 @@ class FilmsModel {
         return new PDO('mysql:host=localhost;dbname=db_blockbuster;charset=utf8', 'root', ''); 
     }
     
-    //3° ordenado por titulo o por año
+    //3° ordenado por titulo o por año y paginado
     public function getMovies($orderBy = 'titulo', $sort = 'ASC', $limit = null, $page = null) {
-        $allowedFields = ['id_pelicula', 'titulo', 'anio', 'rating', 'id_genero'];
+        $allowedFields = ['id_pelicula', 'titulo', 'anio', 'rating'];
         $allowedOrder = ['ASC', 'DESC'];
 
         if (!in_array($orderBy, $allowedFields)) $orderBy = 'titulo';
@@ -21,10 +21,13 @@ class FilmsModel {
 
         $sql = "SELECT * FROM pelicula ORDER BY $orderBy $sort";
 
-        // Paginación
+        // paginacion
         if ($limit && $page) {
             $offset = ($page - 1) * $limit;
             $sql .= " LIMIT $limit OFFSET $offset";
+        } elseif ($limit) {
+            //si se envia el limit pero no page
+            $sql .= " LIMIT $limit";
         }
 
         $query = $this->db->prepare($sql);
@@ -37,6 +40,7 @@ class FilmsModel {
         $fields = ['titulo', 'anio', 'rating', 'id_genero'];
         $orderAlf = ['ASC', 'DESC'];
         
+        //in_array() sirve para verificar si un valor existe dentro de un arreglo.
         if(!in_array($oderBy,$fields)) $fields = 'titulo';
         if(!in_array($order,$orderAlf)) $order = 'ASC';
 
@@ -85,5 +89,12 @@ class FilmsModel {
         $query = $this->db->prepare('SELECT * FROM pelicula WHERE id_genero = ?');
         $query->execute([$id]);
         return $query->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    function postFilm($titulo,$anio,$rating,$id_genero,$poster){
+        $query = $this->db->prepare('INSERT INTO pelicula (titulo, anio,rating,id_genero,poster) VALUES (?, ?, ?, ?, ?)');
+        $query->execute([$titulo,$anio,$rating,$id_genero,$poster]);    
+        $id = $this->db->lastInsertId();// ID de la último que fue agrego a la base de datos   
+        return $id;
     }
 }
